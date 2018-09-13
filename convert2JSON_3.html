@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="./jquery-3.3.1.min.js"></script>
+<script src="./mapForm.js"></script>
+<script src="./dataSetParsing.js"></script>
+<script src="./canvasParsing.js"></script>
+  </head>
+  <body>
+  <button id="convert">Convert to JSON</button>
+  <button id="blocks">Generate Data Sets</button>
+<textarea cols = 80 rows=10 id="formsText"></textarea>
+<textarea cols = 80 rows=10 id="dataSetsOutput"></textarea>
+<textarea cols = 80 rows=10 id="viewsOutput"></textarea>
+  <div id="dataSets"></div>
+  *******************************************************
+  <div id="views"></div>
+
+  <script>
+  $(document).ready(function(){
+    $("#convert").click(function(){
+	
+	  var rawText = $("#formsText").val();
+	  
+	  var thisForm = mapForm(rawText);
+	  jsonForm = thisForm.inJSON();
+      $("#result").html(jsonForm);
+	
+	  formStructure = JSON.parse(jsonForm);
+	  
+	  var dataSetHtml = formDetails(formStructure);
+	  var viewHtml = viewDetails(formStructure);
+	  
+      $("#viewsOutput").text(JSON.stringify(viewHtml.views["CNV_STD"], null, 1));
+      $("#dataSetsOutput").text(JSON.stringify(dataSetHtml.dataSets["VU_CASH_PROJ_BALANCES"], null, 1));
+
+    });
+  });  
+
+</script>
+</body>
+
+</html>
+
