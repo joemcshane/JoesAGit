@@ -8,13 +8,21 @@
   </head>
   <body>
   <button id="convert">Convert to JSON</button>
-  <button id="blocks">Generate Data Sets</button>
+<br />
 <textarea cols = 80 rows=10 id="formsText"></textarea>
+<br />*******************************************************
+<br />  Models<div id="views">
+<textarea cols = 80 rows=10 id="modelsOutput"></textarea>
+<br />*******************************************************
+<br />  Views<div id="views">
+<textarea cols = 80 rows=10 id="viewsHTMLOutput"></textarea>
+</div><br />*******************************************************
+<br />  DataSets JSON<div id="dataSets">
 <textarea cols = 80 rows=10 id="dataSetsOutput"></textarea>
+</div>
+<br />*******************************************************
+<br />  View JSON<div id="views">
 <textarea cols = 80 rows=10 id="viewsOutput"></textarea>
-  <div id="dataSets"></div>
-  *******************************************************
-  <div id="views"></div>
 
   <script>
   $(document).ready(function(){
@@ -31,8 +39,37 @@
 	  var dataSetHtml = formDetails(formStructure);
 	  var viewHtml = viewDetails(formStructure);
 	  
-      $("#viewsOutput").text(JSON.stringify(viewHtml.views["CNV_STD"], null, 1));
-      $("#dataSetsOutput").text(JSON.stringify(dataSetHtml.dataSets["VU_CASH_PROJ_BALANCES"], null, 1));
+	  var allViews  = '[';
+      for (var i=0; i < viewHtml.views.length; i++) { 
+	    if (i > 0) {
+		allViews += ','; 
+		}
+		allViews += JSON.stringify(viewHtml.views[viewHtml.viewNames[i]], null, 1);
+	   }
+	  allViews  += ']';
+      $("#viewsOutput").text(allViews);
+
+	  var allDataSets  = '[';
+      for (var i=0; i < dataSetHtml.dataSets.length; i++) { 
+	    if (i > 0) {
+		allDataSets += ','; 
+		}
+		allDataSets += JSON.stringify(dataSetHtml.dataSets[dataSetHtml.dataSetNames[i]], null, 1);
+	   }
+	  allDataSets  += ']';
+	  
+      $("#dataSetsOutput").text(allDataSets);
+
+	  var modelClasses ="";
+
+	  for (var i=0; i < dataSetHtml.models.length; i++) { 
+	    if (i > 0) {
+		modelClasses += '\n\n'; 
+		}
+		modelClasses += dataSetHtml.models[dataSetHtml.dataSetNames[i]];
+	  }
+      $("#modelsOutput").text(modelClasses);
+	  
 
     });
   });  

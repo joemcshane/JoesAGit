@@ -59,12 +59,15 @@ var Field = function Field(name, type, length, mandatory, database, queryOnly, q
 
 var formDetails = function formDetails(formJSON) {
 
+	  var newLine = "\n";
    this.rawDataSets = formJSON.Blocks;
 
    this.dataSetNames = new Array(rawDataSets.length);
    this.dataSets = new Array(rawDataSets.length);
+   this.models = new Array(rawDataSets.length);
    
-   for (i=0; i < rawDataSets.length; i++) {
+   for (var i=0; i < rawDataSets.length; i++) {
+	   
       dataSetNames[i] = rawDataSets[i].Name;
 	  dataSets[dataSetNames[i]] = new DataSet(rawDataSets[i]["Name"]
 	                  , rawDataSets[i]["Database Data Block"] == "Yes"
@@ -79,13 +82,12 @@ var formDetails = function formDetails(formJSON) {
 	  dataSets[dataSetNames[i]].FieldNames = new Array(rawDataSets[i]["Items"].length);
 	  dataSets[dataSetNames[i]].Fields = new Array(rawDataSets[i]["Items"].length);
 	  
-	  for (j=0; j < rawDataSets[i]["Items"].length; j++) {
+	  for (var j=0; j < rawDataSets[i]["Items"].length; j++) {
 	  
-	    dataSets[dataSetNames[i]].FieldNames[j] = rawDataSets[i].Items[j]["Column Name"];
-		if (dataSets[dataSetNames[i]].FieldNames) {
-	//    dataSets[dataSetNames[i]].Fields[dataSets[dataSetNames[i]].FieldNames[j]] = 
+	    dataSets[dataSetNames[i]].FieldNames[j] = rawDataSets[i].Items[j]["Name"];
+		if (dataSets[dataSetNames[i]].FieldNames ) {
 	    dataSets[dataSetNames[i]].Fields[j] = 
-		       new Field( rawDataSets[i].Items[j]["Column Name"]
+		       new Field( rawDataSets[i].Items[j]["Name"]
 			            , rawDataSets[i].Items[j]["Data Type"]
 			            , rawDataSets[i].Items[j]["Maximum Length"]
 			            , rawDataSets[i].Items[j]["Required"]
@@ -94,16 +96,46 @@ var formDetails = function formDetails(formJSON) {
 			            , rawDataSets[i].Items[j]["Query Allowed"] == "Yes"
 			            , rawDataSets[i].Items[j]["Update Allowed"] == "Yes"
 			            , rawDataSets[i].Items[j]["Insert Allowed"] == "Yes"
-			            , rawDataSets[i].Items[j]["Delete Allowed"] == "Yes"						
-			            , rawDataSets[i].Items[j]["Primary Key"] == "Yes"	
-			            , rawDataSets[i].Items[j]["Copy Value from Item"]	
+			            , rawDataSets[i].Items[j]["Delete Allowed"] == "Yes"
+			            , rawDataSets[i].Items[j]["Primary Key"] == "Yes"
+			            , rawDataSets[i].Items[j]["Copy Value from Item"]
 						
 						);
 		}
 	  }
+	  
+	  /* Models */
+	 	models[dataSetNames[i]] = 
+		    "import { Table } from '../common/table';" + newLine +
+			"import { Column } from '../common/column';" + newLine + newLine +
+			"export class " + dataSets[dataSetNames[i]].Name + " { "  + newLine;
+			
+			for (var k=0; k < dataSets[dataSetNames[i]].Fields.length; k++) {
+				if (dataSets[dataSetNames[i]].Fields[k].Type) {
+				  models[dataSetNames[i]] += dataSets[dataSetNames[i]].Fields[k].Name + ': Column = <Column>{ ';
+				  models[dataSetNames[i]] += 'columnName: "' + dataSets[dataSetNames[i]].Fields[k].Name + '", ';
+				  models[dataSetNames[i]] += 'columnType: "' + dataSets[dataSetNames[i]].Fields[k].Type + '", ';
+				  models[dataSetNames[i]] += 'columnLength: ' + dataSets[dataSetNames[i]].Fields[k].Length + ', ';
+				  models[dataSetNames[i]] += 'databaseColumn: ' + dataSets[dataSetNames[i]].Fields[k].Database + ' }; ' + newLine;
+				}
+			}
+			
+			/* Add table details */
+			models[dataSetNames[i]] += 'table: Table = <Table>{ tableName: "' + dataSetNames[i] + '",' + newLine;
+			models[dataSetNames[i]] += 'databaseTable: "' + dataSets[dataSetNames[i]].TableName + '",' + newLine;
+			models[dataSetNames[i]] += 'queryRecord: "' + dataSets[dataSetNames[i]].QueryAllowed + '",' + newLine;
+			models[dataSetNames[i]] += 'insertRecord: "' + dataSets[dataSetNames[i]].InsertAllowed + '",' + newLine;
+			models[dataSetNames[i]] += 'updateRecord: "' + dataSets[dataSetNames[i]].UpdateAllowed + '",' + newLine;
+			models[dataSetNames[i]] += 'deleteRecord: "' + dataSets[dataSetNames[i]].DeleteAllowed + '",' + newLine;
+			models[dataSetNames[i]] += 'queryCondition: "' + dataSets[dataSetNames[i]].Condition + '",' + newLine;
+			models[dataSetNames[i]] += 'orderBy: "' + dataSets[dataSetNames[i]].OrderBy + '"' + newLine ;
+			models[dataSetNames[i]] += '};';
+			
+		
 	}	
 	
 	return { dataSetNames : dataSetNames 
-		   , dataSets : dataSets };
+		   , dataSets : dataSets
+		   , models : models };
 	  
    }
