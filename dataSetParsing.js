@@ -64,6 +64,7 @@ var formDetails = function formDetails(formJSON) {
 
    this.dataSetNames = new Array(rawDataSets.length);
    this.dataSets = new Array(rawDataSets.length);
+   this.dataSetRows = new Array(rawDataSets.length);
    this.models = new Array(rawDataSets.length);
    
    for (var i=0; i < rawDataSets.length; i++) {
@@ -129,13 +130,45 @@ var formDetails = function formDetails(formJSON) {
 			models[dataSetNames[i]] += 'deleteRecord: "' + dataSets[dataSetNames[i]].DeleteAllowed + '",' + newLine;
 			models[dataSetNames[i]] += 'queryCondition: "' + dataSets[dataSetNames[i]].Condition + '",' + newLine;
 			models[dataSetNames[i]] += 'orderBy: "' + dataSets[dataSetNames[i]].OrderBy + '"' + newLine ;
-			models[dataSetNames[i]] += '};';
 			
-		
+			models[dataSetNames[i]] += 'tableColumn: {' ;
+
+			
+			for (var k=0; k < dataSets[dataSetNames[i]].Fields.length; k++) {
+				if (dataSets[dataSetNames[i]].Fields[k].Type) {
+
+				if (k>0) {models[dataSetNames[i]] += ','}
+ 				models[dataSetNames[i]] += 'this.' + dataSets[dataSetNames[i]].Fields[k].Name;
+					
+				}
+			}
+			models[dataSetNames[i]] += '}' + newLine + '};';
+
+  // rows
+  			dataSetRows[dataSetNames[i]] = 'export class ' + dataSetNames[i] + '_row {' + newLine;
+			
+			for (var k=0; k < dataSets[dataSetNames[i]].Fields.length; k++) {
+				if (dataSets[dataSetNames[i]].Fields[k].Type) {
+
+				dataSetRows[dataSetNames[i]] += dataSets[dataSetNames[i]].Fields[k].Name + ':' ;
+				if (dataSets[dataSetNames[i]].Fields[k].Type == "Number"){
+					dataSetRows[dataSetNames[i]] += 'number;' + newLine;}
+				else if (dataSets[dataSetNames[i]].Fields[k].Type == "Date"){
+					dataSetRows[dataSetNames[i]] += 'Date;' + newLine;}
+				else {
+					dataSetRows[dataSetNames[i]] += 'string;' + newLine;}
+					
+				}
+			}
+			dataSetRows[dataSetNames[i]] += '};';
+
+
+			
 	}	
 	
 	return { dataSetNames : dataSetNames 
 		   , dataSets : dataSets
+		   , dataSetRows : dataSetRows
 		   , models : models };
 	  
    }
