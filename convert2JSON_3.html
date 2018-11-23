@@ -5,17 +5,31 @@
 <script src="./mapForm.js"></script>
 <script src="./dataSetParsing.js"></script>
 <script src="./canvasParsing.js"></script>
+<script src="./templateHtml.js"></script>
+<script src="./fileGeneration.js"></script>
+<script src="./FileSaver.min.js"></script>
+<script src="./jszip.min.js"></script>
+<script src="./appStructure.js"></script>
+<script src="./PLSQLGen.js"></script>
+<script src="./JSON2XML.js"></script>
+
   </head>
   <body>
   <button id="convert">Convert to JSON</button>
 <br />
 <textarea cols = 80 rows=10 id="formsText"></textarea>
 <br />*******************************************************
+<br />  XML<div id="views">
+<textarea cols = 80 rows=10 id="XMLOutput"></textarea>
+<br />*******************************************************
 <br />  Models<div id="views">
 <textarea cols = 80 rows=10 id="modelsOutput"></textarea>
 <br />*******************************************************
 <br />  Views<div id="views">
 <textarea cols = 80 rows=10 id="viewsHTMLOutput"></textarea>
+<br />*******************************************************
+<br />  Views<div id="views">
+<textarea cols = 80 rows=10 id="rowManagementModels"></textarea>
 </div><br />*******************************************************
 <br />  DataSets JSON<div id="dataSets">
 <textarea cols = 80 rows=10 id="dataSetsOutput"></textarea>
@@ -32,12 +46,13 @@
 	  
 	  var thisForm = mapForm(rawText);
 	  jsonForm = thisForm.inJSON();
-      $("#result").html(jsonForm);
 	
 	  formStructure = JSON.parse(jsonForm);
+      $("#XMLOutput").html(JSON2XML(formStructure, "Form"));
 	  
 	  var dataSetHtml = formDetails(formStructure);
 	  var viewHtml = viewDetails(formStructure);
+	  var appStruct = appStructure(formStructure);
 	  
 	  var allViews  = '[';
       for (var i=0; i < viewHtml.views.length; i++) { 
@@ -70,7 +85,41 @@
 	  }
       $("#modelsOutput").text(modelClasses);
 	  
+	  
+	  // For each canvas
+	  var allItems = [];
 
+	  for (var i=0; i < viewNames.length; i++) { 
+		 allItems = allItems.concat(views[viewNames[i]].Items);
+	  }
+	  
+	  var blockViews = BlockViews(allItems, dataSetNames, dataSets);
+	  
+	  var formViews ="";
+	  for (var j=0; j < dataSetNames.length; j++){
+			formViews += blockViews.blockViews[dataSetNames[j]]+ "\n";
+		}
+		
+      $("#viewsHTMLOutput").text(formViews);
+	  
+	  procedures = GenerateProcedures(formStructure);
+	  
+	  generateFiles( dataSetNames
+	               , blockViews.blockViews
+				   , dataSetHtml.models
+				   , blockViews.cssMetadata
+				   , formStructure.Canvases
+				   , appStruct
+				   , formStructure.Windows
+				   , formStructure["Console Window"]);
+	  
+	  
+	  var dataRows = ""
+	  for (var k=0; k < dataSetNames.length; k++){
+	    dataRows += dataSetRows[dataSetNames[k]];
+		}
+      $("#rowManagementModels").text(dataRows);
+		
     });
   });  
 

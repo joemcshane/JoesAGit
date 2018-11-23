@@ -1,18 +1,46 @@
-var View = function(name, height, width, visible, formJSON) {
+var View = function(name, height, width, visible, windowName, formJSON) {
 
   this.name = name; 
   this.height = height;
   this.width = width;
   this.visible = visible;
+  this.windowName = windowName
   this.items = new Items(formJSON, name);
 
 
-return { Name : name
-       , Height : height
-	   , Width : width
-	   , Visible : visible 
+return { Name : this.name
+       , Height : this.height
+	   , Width : this.width
+	   , Visible : this.visible 
+	   , Window : this.windowName 
 	   , Items : this.items}
 	
+}
+
+var FormWindow = function FormWindow(name, title, xLocation, yLocation, width, height, allViews, allViewNames) {
+	
+	this.name = name;
+	this.title = title;
+	this.xLocation = xLocation;
+	this.yLocation = yLocation;
+	this.width = width;
+	this.height = height;
+	this.views = [];
+	
+	for(var k=0; k < allViews.length; k++){
+		
+		if (allViews[allViewNames[k]].Window == name) {
+			this.views.push(allViewNames[k]);
+		}
+	}
+	
+	return { Name : this.name
+		   , Title : this.title
+	       , XLocation : this.xLocation
+		   , YLocation : this.yLocation
+		   , Width : this.width
+		   , Height : this.height
+		   , Views : this.views}
 }
 
 var DisplayItem = function DisplayItem(
@@ -39,11 +67,15 @@ var DisplayItem = function DisplayItem(
 		,width
 		,height
 		,fontStyle
-		,prompt
+		,promptText
 		,promptAttachmentEdge
 		,summaryFunction
 		,summarizedBlock
-		,summarizedItem) {
+		,summarizedItem
+		,label
+		,icon
+		,labelAttachmentEdge
+		,labelOffset) {
 
 	return {Name : name,
 			DataSet : dataSet,
@@ -68,11 +100,15 @@ var DisplayItem = function DisplayItem(
 			Width : width,
 			Height : height,
 			FontStyle : fontStyle,
-			Prompt : prompt,
+			Prompt : promptText,
 			PromptAttachmentEdge : promptAttachmentEdge,
 			SummaryFunction : summaryFunction,
 			SummarizedBlock : summarizedBlock,
-			SummarizedItem : summarizedItem };
+			SummarizedItem : summarizedItem,
+			Label : label,
+			Icon : icon,
+			LabelAttachmentEdge: labelAttachmentEdge,
+			LabelOffset: labelOffset};
 }
 
 var Items = function Items(formJSON, canvasName) {
@@ -103,7 +139,7 @@ var Items = function Items(formJSON, canvasName) {
 								, rawDataSets[i].Items[j]["Query Allowed"] == "Yes"
 								, rawDataSets[i].Items[j]["Update Allowed"] == "Yes"
 								, rawDataSets[i].Items[j]["Insert Allowed"] == "Yes"
-								, rawDataSets[i].Items[j]["Database"] == "Yes"
+								, rawDataSets[i].Items[j]["Database Item"] == "Yes"
 								, rawDataSets[i].Items[j]["Visible"] == "Yes"
 								, rawDataSets[i].Items[j]["Canvas"] 
 								, rawDataSets[i].Items[j]["X Position"] 
@@ -116,7 +152,10 @@ var Items = function Items(formJSON, canvasName) {
 								, rawDataSets[i].Items[j]["Summary Function"] 
 								, rawDataSets[i].Items[j]["Summarized Block"] 
 								, rawDataSets[i].Items[j]["Summarized Item"] 
-						
+								, rawDataSets[i].Items[j]["Label"] 
+						        , rawDataSets[i].Items[j]["Iconic"] == "Yes" ? rawDataSets[i].Items[j]["Icon Filename"] : ""
+						        , rawDataSets[i].Items[j]["Prompt Attachment Edge"]
+						        , rawDataSets[i].Items[j]["Prompt Attachment Offset"]
 								);
 		}
 	  }
@@ -129,31 +168,44 @@ var Items = function Items(formJSON, canvasName) {
 	return trimmedItems;
 }
 
-//TODO: Capture items
-// Item type, canvas, height width font style, keyboard navigable, name, column name, prompt, justification, required, visible
-// Add number of rows displayed
 
 var viewDetails = function viewDetails(formJSON) {
 
    this.rawViews = formJSON.Canvases;
+   this.rawWindows = formJSON.Windows
    
    this.viewNames = new Array(rawViews.length);
    this.views = new Array(rawViews.length);
+   this.windowNames = new Array(rawWindows.length);
+   this.windows = new Array(rawWindows.length);
    
-   var i = 0 ;
-   
-   for (i=0; i < viewNames.length; i++) {
+   for (var i=0; i < viewNames.length; i++) {
       viewNames[i] = rawViews[i].Name;
 	  views[viewNames[i]] = 
 	        new View(rawViews[i]["Name"],
 			         rawViews[i]["Height"],
 					 rawViews[i]["Width"],
 					 rawViews[i]["Visible"],
+					 rawViews[i]["Window"],
 					 formJSON)
+	}
+	
+	for (var j=0; j < windowNames.length; j++){
+		windowNames[j] = rawWindows[j].Name;
+		windows[windowNames[j]] = 
+				new FormWindow ( rawWindows[j]["Name"]
+							   , rawWindows[j]["Title"]
+							   , rawWindows[j]["X Position"]
+							   , rawWindows[j]["Y Position"]
+							   , rawWindows[j]["Width"]
+							   , rawWindows[j]["Height"]
+							   , views
+							   , viewNames);
 	}
 		
 	return { viewNames : viewNames
 	       , views : views
+		   , windows : windows
 		   };
 	  
    }

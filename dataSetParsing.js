@@ -1,4 +1,4 @@
-var DataSet = function(name, database, tableName, queryAllowed, insertAllowed, updateAllowed, deleteAllowed, whereClause, orderByClause) {
+var DataSet = function(name, database, tableName, queryAllowed, insertAllowed, updateAllowed, deleteAllowed, whereClause, orderByClause, displayedRows){
 
   this.name = name; 
   this.database = database;
@@ -8,6 +8,7 @@ var DataSet = function(name, database, tableName, queryAllowed, insertAllowed, u
   this.deleteAllowed = deleteAllowed;
   this.whereClause= whereClause;
   this.orderByClause = orderByClause;
+  this.DisplayedRows = displayedRows;
 
 
 return { Name : name
@@ -18,7 +19,8 @@ return { Name : name
 	   , UpdateAllowed : updateAllowed
 	   , DeleteAllowed : deleteAllowed
 	   , Condition : whereClause
-	   , OrderBy : orderByClause }
+	   , OrderBy : orderByClause
+       , DisplayedRows : displayedRows}
 	
 }
 
@@ -78,7 +80,8 @@ var formDetails = function formDetails(formJSON) {
 					  , rawDataSets[i]["Update Allowed"] == "Yes"
 					  , rawDataSets[i]["Delete Allowed"] == "Yes"
 					  , rawDataSets[i]["WHERE Clause"]
-					  , rawDataSets[i]["ORDER BY Clause"]);
+					  , rawDataSets[i]["ORDER BY Clause"]
+					  , rawDataSets[i]["Number of Records Displayed"]);
 	  
 	  dataSets[dataSetNames[i]].FieldNames = new Array(rawDataSets[i]["Items"].length);
 	  dataSets[dataSetNames[i]].Fields = new Array(rawDataSets[i]["Items"].length);
@@ -91,8 +94,8 @@ var formDetails = function formDetails(formJSON) {
 		       new Field( rawDataSets[i].Items[j]["Name"]
 			            , rawDataSets[i].Items[j]["Data Type"]
 			            , rawDataSets[i].Items[j]["Maximum Length"]
-			            , rawDataSets[i].Items[j]["Required"]
-			            , rawDataSets[i].Items[j]["Database Item"]
+			            , rawDataSets[i].Items[j]["Required"] == "Yes"
+			            , rawDataSets[i].Items[j]["Database Item"] == "Yes"
 			            , rawDataSets[i].Items[j]["Query Only"] == "Yes"
 			            , rawDataSets[i].Items[j]["Query Allowed"] == "Yes"
 			            , rawDataSets[i].Items[j]["Update Allowed"] == "Yes"
@@ -103,7 +106,7 @@ var formDetails = function formDetails(formJSON) {
 						
 						);
 		}
-	  }
+	  }  // name, type, length, mandatory, database, queryOnly, queryAllowed, updateAllowed, insertAllowed, deleteAllowed, primaryKey, copyValue
 	  
 	  /* Models */
 	 	models[dataSetNames[i]] = 
@@ -123,26 +126,27 @@ var formDetails = function formDetails(formJSON) {
 			
 			/* Add table details */
 			models[dataSetNames[i]] += 'table: Table = <Table>{ tableName: "' + dataSetNames[i] + '",' + newLine;
-			models[dataSetNames[i]] += 'databaseTable: "' + dataSets[dataSetNames[i]].TableName + '",' + newLine;
-			models[dataSetNames[i]] += 'queryRecord: "' + dataSets[dataSetNames[i]].QueryAllowed + '",' + newLine;
-			models[dataSetNames[i]] += 'insertRecord: "' + dataSets[dataSetNames[i]].InsertAllowed + '",' + newLine;
-			models[dataSetNames[i]] += 'updateRecord: "' + dataSets[dataSetNames[i]].UpdateAllowed + '",' + newLine;
-			models[dataSetNames[i]] += 'deleteRecord: "' + dataSets[dataSetNames[i]].DeleteAllowed + '",' + newLine;
+			models[dataSetNames[i]] += 'databaseTable: ' + dataSets[dataSetNames[i]].Database + ',' + newLine;
+			models[dataSetNames[i]] += 'queryRecord: ' + dataSets[dataSetNames[i]].QueryAllowed + ',' + newLine;
+			models[dataSetNames[i]] += 'insertRecord: ' + dataSets[dataSetNames[i]].InsertAllowed + ',' + newLine;
+			models[dataSetNames[i]] += 'updateRecord: ' + dataSets[dataSetNames[i]].UpdateAllowed + ',' + newLine;
+			models[dataSetNames[i]] += 'deleteRecord: ' + dataSets[dataSetNames[i]].DeleteAllowed + ',' + newLine;
 			models[dataSetNames[i]] += 'queryCondition: "' + dataSets[dataSetNames[i]].Condition + '",' + newLine;
-			models[dataSetNames[i]] += 'orderBy: "' + dataSets[dataSetNames[i]].OrderBy + '"' + newLine ;
+			models[dataSetNames[i]] += 'orderBy: "' + dataSets[dataSetNames[i]].OrderBy + '",' + newLine ;
+			models[dataSetNames[i]] += 'displayedRows: ' + dataSets[dataSetNames[i]].DisplayedRows + ',' + newLine ;
 			
-			models[dataSetNames[i]] += 'tableColumn: {' ;
+			models[dataSetNames[i]] += 'tableColumns: [' ;
 
-			
+			var columnCount = 0;
 			for (var k=0; k < dataSets[dataSetNames[i]].Fields.length; k++) {
 				if (dataSets[dataSetNames[i]].Fields[k].Type) {
 
-				if (k>0) {models[dataSetNames[i]] += ','}
- 				models[dataSetNames[i]] += 'this.' + dataSets[dataSetNames[i]].Fields[k].Name;
-					
+				if (columnCount > 0) {models[dataSetNames[i]] += ','}
+					models[dataSetNames[i]] += 'this.' + dataSets[dataSetNames[i]].Fields[k].Name;
+					columnCount++;
 				}
 			}
-			models[dataSetNames[i]] += '}' + newLine + '};';
+			models[dataSetNames[i]] += ']' + newLine + '}' + newLine + '};';
 
   // rows
   			dataSetRows[dataSetNames[i]] = 'export class ' + dataSetNames[i] + '_row {' + newLine;
@@ -160,9 +164,21 @@ var formDetails = function formDetails(formJSON) {
 					
 				}
 			}
-			dataSetRows[dataSetNames[i]] += '};';
+			dataSetRows[dataSetNames[i]] += '}';
+//dataSet
+			dataSetRows[dataSetNames[i]] += newLine + newLine;
+			dataSetRows[dataSetNames[i]] += 'export class ' + dataSetNames[i] + '_dataset {' + newLine;
+			dataSetRows[dataSetNames[i]] += 'cachedRows: ' + dataSetNames[i] + '_row[];'  + newLine;
+			dataSetRows[dataSetNames[i]] += 'displayedRows: number[];'  + newLine;
+			dataSetRows[dataSetNames[i]] += 'currentRowIndex: number;'  + newLine + newLine;
 
-
+			dataSetRows[dataSetNames[i]] += 'currentRow(): ' + dataSetNames[i] + '_row {'  + newLine;
+			dataSetRows[dataSetNames[i]] += 'return this.cachedRows[this.currentRowIndex];'+ newLine + '}' + newLine;
+			dataSetRows[dataSetNames[i]] += 'constructor(){ '+ newLine;
+			dataSetRows[dataSetNames[i]] += 'this.cachedRows = [new '+ dataSetNames[i] + '_row()];' + newLine;
+			dataSetRows[dataSetNames[i]] += 'this.currentRowIndex = 0;' + newLine;
+			dataSetRows[dataSetNames[i]] += 'this.displayedRows = [0];' + newLine;
+			dataSetRows[dataSetNames[i]] += '} '+ newLine + '}' + newLine;
 			
 	}	
 	
